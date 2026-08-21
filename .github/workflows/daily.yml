@@ -1,0 +1,28 @@
+name: Send Daily Telegram Message
+
+on:
+  schedule:
+    # 9:30 AM IST = 4:00 AM UTC (IST is UTC+5:30)
+    - cron: '0 4 * * *'
+  workflow_dispatch: {}   # lets you manually trigger a test run from the Actions tab
+
+jobs:
+  send-message:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Send today's message
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python send_daily.py
