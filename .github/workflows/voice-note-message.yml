@@ -1,0 +1,26 @@
+name: Send Daily Voice Note
+
+on:
+  schedule:
+    # 9:30 AM IST = 4:00 AM UTC — adjust to match your preferred time
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  send-voice-note:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Generate and send voice note
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: python send_voice_note.py
