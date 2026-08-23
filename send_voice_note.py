@@ -13,7 +13,7 @@ from datetime import date
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "PUT_YOUR_BOT_TOKEN_HERE")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "PUT_YOUR_GROUP_CHAT_ID_HERE")
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "PUT_YOUR_ELEVENLABS_KEY_HERE")
-VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"  # your chosen ElevenLabs voice
+VOICE_ID = "dxhwlBCxCrnzRlP4wDeE"  # your chosen ElevenLabs voice
 MESSAGES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "messages.json")
 AUDIO_FILE = "todays_message.mp3"
 # -----------------
