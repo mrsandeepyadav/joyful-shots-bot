@@ -1,0 +1,79 @@
+# Save as: .github/workflows/emotional-pattern.yml
+#
+# Each cron entry explicitly calls its OWN slot - no guessing from the
+# current clock time. This removes the main source of "random" sends:
+# a delayed run picking the wrong hour.
+#
+# Cron times are UTC. IST = UTC + 5:30.
+#   08:00 IST -> 02:30 UTC
+#   11:00 IST -> 05:30 UTC
+#   14:00 IST -> 08:30 UTC
+#   17:00 IST -> 11:30 UTC
+#   20:00 IST -> 14:30 UTC
+
+name: Emotional Pattern Series
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+    - cron: "30 5 * * *"
+    - cron: "30 8 * * *"
+    - cron: "30 11 * * *"
+    - cron: "30 14 * * *"
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: "Manually pick a slot to test (08:00/11:00/14:00/17:00/20:00)"
+        required: true
+        default: "08:00"
+
+jobs:
+  send-message:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # need write access to commit the updated sent_log.json back,
+          # so duplicate/late runs are remembered across workflow runs
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install requests
+
+      - name: Resolve slot for this specific cron trigger
+        id: slot
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "slot=${{ github.event.inputs.slot }}" >> "$GITHUB_OUTPUT"
+          else
+            case "${{ github.event.schedule }}" in
+              "30 2 * * *")  echo "slot=08:00" >> "$GITHUB_OUTPUT" ;;
+              "30 5 * * *")  echo "slot=11:00" >> "$GITHUB_OUTPUT" ;;
+              "30 8 * * *")  echo "slot=14:00" >> "$GITHUB_OUTPUT" ;;
+              "30 11 * * *") echo "slot=17:00" >> "$GITHUB_OUTPUT" ;;
+              "30 14 * * *") echo "slot=20:00" >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
+
+      - name: Send today's message
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.EMOTION_GROUP_CHAT_ID }}
+          SERIES_START_DATE: ${{ vars.EMOTION_SERIES_START_DATE }}
+          SERIES_NAME: emotional_pattern
+        run: python3 joyful-shots-emotions/send_emotion_message_strict.py "${{ steps.slot.outputs.slot }}"
+
+      - name: Commit updated sent-log (prevents duplicate sends)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add joyful-shots-emotions/sent_log_emotional_pattern.json
+          git diff --cached --quiet || git commit -m "Log sent message ${{ steps.slot.outputs.slot }}"
+          # Pull-rebase before push in case another series' workflow
+          # committed to the repo in the meantime (different file, but
+          # same branch) - avoids a rejected push.
+          git pull --rebase origin main
+          git push
